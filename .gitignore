@@ -2,3 +2,4 @@
 /pstar-*
 *.tar.gz
 PLAN.md
+dist/
