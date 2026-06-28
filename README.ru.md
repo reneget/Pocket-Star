@@ -95,6 +95,10 @@ graph LR
         CORE[Core Module]
         SFTP[SFTP Module<br/>Планируется]
         FWD[Port Forward<br/>Планируется]
+        TUI[TUI Module<br/>Планируется]
+        MEDIA[Media Storage<br/>Планируется]
+        CLOUD[Cloud Sync<br/>Планируется]
+        MON[Monitoring<br/>Планируется]
     end
     
     subgraph "Дистрибуция"
@@ -111,6 +115,10 @@ graph LR
     MOD --> CORE
     MOD --> SFTP
     MOD --> FWD
+    MOD --> TUI
+    MOD --> MEDIA
+    MOD --> CLOUD
+    MOD --> MON
     DOCK --> HUB_IMG
     DOCK --> NODE_IMG
     CLI --> SCRIPTS
@@ -123,6 +131,10 @@ graph LR
     style CORE fill:#ff6b6b,color:#fff
     style SFTP fill:#ff6b6b,color:#fff
     style FWD fill:#ff6b6b,color:#fff
+    style TUI fill:#ff6b6b,color:#fff
+    style MEDIA fill:#ff6b6b,color:#fff
+    style CLOUD fill:#ff6b6b,color:#fff
+    style MON fill:#ff6b6b,color:#fff
 ```
 
 ### Последовательность подключения
@@ -272,6 +284,10 @@ type Module interface {
 - **sftp** — файлообменник через SFTP
 - **port-fwd** — проброс портов через хаб
 - **dashboard** — веб-интерфейс
+- **tui** — терминальный интерфейс (как у opencode)
+- **media** — медиа-сервер (доступ с телефона/TV; на базе Jellyfin/Immich)
+- **cloud** — облачное хранилище и синхронизация (как OneDrive; на базе Nextcloud)
+- **monitoring** — мониторинг состояния системы (Pulse или Uptime Kuma)
 
 ---
 

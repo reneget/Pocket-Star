@@ -93,8 +93,12 @@ graph LR
     
     subgraph "Modules"
         CORE[Core Module]
-        SFTP[SFTP Module<br/>Planned]
-        FWD[Port Forward<br/>Planned]
+    SFTP[SFTP Module<br/>Planned]
+    FWD[Port Forward<br/>Planned]
+    TUI[TUI Module<br/>Planned]
+    MEDIA[Media Storage<br/>Planned]
+    CLOUD[Cloud Sync<br/>Planned]
+    MON[Monitoring<br/>Planned]
     end
     
     subgraph "Distribution"
@@ -111,6 +115,10 @@ graph LR
     MOD --> CORE
     MOD --> SFTP
     MOD --> FWD
+    MOD --> TUI
+    MOD --> MEDIA
+    MOD --> CLOUD
+    MOD --> MON
     DOCK --> HUB_IMG
     DOCK --> NODE_IMG
     CLI --> SCRIPTS
@@ -123,6 +131,10 @@ graph LR
     style CORE fill:#ff6b6b,color:#fff
     style SFTP fill:#ff6b6b,color:#fff
     style FWD fill:#ff6b6b,color:#fff
+    style TUI fill:#ff6b6b,color:#fff
+    style MEDIA fill:#ff6b6b,color:#fff
+    style CLOUD fill:#ff6b6b,color:#fff
+    style MON fill:#ff6b6b,color:#fff
 ```
 
 ### Connection sequence
@@ -272,6 +284,10 @@ type Module interface {
 - **sftp** — file sharing over SFTP
 - **port-fwd** — forward ports through the hub
 - **dashboard** — web UI
+- **tui** — terminal user interface (inspired by opencode)
+- **media** — media storage server (accessible from phone, TV; built on Jellyfin/Immich)
+- **cloud** — cloud storage & file sync (like OneDrive; built on Nextcloud)
+- **monitoring** — system & service health monitoring (Pulse or Uptime Kuma)
 
 ---
 
