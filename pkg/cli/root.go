@@ -4,8 +4,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/anomalyco/my-pretty-star/pkg/module"
+	"github.com/anomalyco/my-pretty-star/modules/tui"
 	"github.com/spf13/cobra"
 )
+
+var cliMode bool
 
 var rootCmd = &cobra.Command{
 	Use:   "pstar",
@@ -14,6 +18,15 @@ var rootCmd = &cobra.Command{
 by connecting it to a cheap VPS via site-to-site VPN (star topology).
 
 Documentation: https://github.com/reneget/Pocket-Star`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if cliMode {
+			return cmd.Help()
+		}
+		return tui.Run(&module.Context{
+			DataDir: "./pstar-data",
+			Network: "10.0.0.0/24",
+		})
+	},
 }
 
 func Execute() {
@@ -24,6 +37,7 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.PersistentFlags().BoolVar(&cliMode, "cli", false, "Force CLI mode instead of TUI")
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(doctorCmd)
 	rootCmd.AddCommand(hubCmd)
