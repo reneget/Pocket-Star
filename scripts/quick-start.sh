@@ -11,7 +11,7 @@ case "$ARCH" in
     *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
 esac
 
-URL="https://github.com/anomalyco/pocket-star/releases/download/${PSTAR_VERSION}/pstar-${OS}-${ARCH}.tar.gz"
+URL="https://github.com/reneget/Pocket-Star/releases/download/${PSTAR_VERSION}/pstar-${OS}-${ARCH}.tar.gz"
 
 echo "Downloading pstar ${PSTAR_VERSION} for ${OS}/${ARCH}..."
 if command -v curl &>/dev/null; then

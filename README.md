@@ -20,7 +20,7 @@ VPS (Hub)         Old PC (Server)     Laptop (Client)
 ### 1. On VPS (hub)
 
 ```bash
-curl -sSL https://github.com/anomalyco/pocket-star/raw/main/scripts/quick-start.sh | bash
+curl -sSL https://github.com/reneget/Pocket-Star/raw/main/scripts/quick-start.sh | bash
 
 pstar hub init --docker --pass
 # → Creates: hub.conf, docker-compose.yml, encrypted client configs

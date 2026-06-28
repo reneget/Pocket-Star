@@ -26,7 +26,7 @@ install_pstar() {
         return
     fi
     info "Installing pstar..."
-    bash <(curl -sSL https://github.com/anomalyco/pocket-star/raw/main/scripts/quick-start.sh)
+    bash <(curl -sSL https://github.com/reneget/Pocket-Star/raw/main/scripts/quick-start.sh)
     ok "pstar installed"
 }
 

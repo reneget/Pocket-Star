@@ -13,7 +13,7 @@ var rootCmd = &cobra.Command{
 	Long: `Pocket Star turns your old PC into a personal server
 by connecting it to a cheap VPS via site-to-site VPN (star topology).
 
-Documentation: https://github.com/anomalyco/pocket-star`,
+Documentation: https://github.com/reneget/Pocket-Star`,
 }
 
 func Execute() {
