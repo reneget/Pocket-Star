@@ -364,7 +364,6 @@ pie title Code Distribution by Package
 
 ## 📖 Documentation
 
-- [PLAN.md](./PLAN.md) — project plan
 - [README.ru.md](./README.ru.md) — Russian version of this document
 
 ---
