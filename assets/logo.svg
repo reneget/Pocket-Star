@@ -1,0 +1,8 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Star poking out of pocket -->
+  <polygon points="100,30 110,57 139,59 115,77 124,105 100,87 76,105 85,77 61,59 90,57"
+           fill="#4ecdc4"/>
+  <!-- Pocket -->
+  <path d="M35,100 L35,175 Q35,190 50,190 L150,190 Q165,190 165,175 L165,100"
+        fill="#1a1a1a" stroke="#555" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
