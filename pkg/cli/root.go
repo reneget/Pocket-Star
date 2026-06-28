@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/anomalyco/my-pretty-star/pkg/icon"
 	"github.com/anomalyco/my-pretty-star/pkg/module"
 	"github.com/anomalyco/my-pretty-star/modules/tui"
 	"github.com/spf13/cobra"
@@ -50,6 +51,8 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version information",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("pstar v0.1.0")
+		fmt.Printf("Pocket Star v0.1.0\n")
+		fmt.Printf("License: MIT\n")
+		fmt.Printf("Logo:    embedded (%d bytes)\n", len(icon.Logo))
 	},
 }

@@ -264,7 +264,7 @@ func (m model) View() string {
 }
 
 func (m model) headerView() string {
-	title := headerStyle.Render("⭐ Pocket Star v0.1.0")
+	title := headerStyle.Render("★ Pocket Star")
 
 	var statusStr string
 	if m.status.Connected {
@@ -273,22 +273,31 @@ func (m model) headerView() string {
 		statusStr = disconnectedStyle.Render("○ Disconnected")
 	}
 
+	right := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		statusStyle.Render("v0.1.0"),
+		statusStyle.Render("│"),
+		statusStr,
+	)
+
+	topLine := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		title,
+		lipgloss.NewStyle().Width(m.width-50).Render(""),
+		right,
+	)
+
 	tabs := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		styleTab(0, m.tab, " Dashboard "),
 		styleTab(1, m.tab, " Peers "),
 		styleTab(2, m.tab, " Logs "),
-		tabStyle.Render(" ? Help "),
+		tabStyle.Render("│ ? Help │"),
 	)
 
-	return lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		title,
-		statusStyle.Render("  │  "),
-		statusStr,
-		statusStyle.Render("  │  "),
-		tabs,
-	)
+	divider := helpStyle.Width(m.width - 8).Render(strings.Repeat("─", m.width-8))
+
+	return fmt.Sprintf("%s\n%s\n%s", topLine, divider, tabs)
 }
 
 func styleTab(idx, active int, label string) string {

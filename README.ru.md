@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="assets/logo.svg" width="120" alt="Pocket Star Logo"/>
+<img src="pkg/icon/logo.svg" width="120" alt="Pocket Star Logo"/>
 
 [![Readme in English](https://img.shields.io/badge/README-English-blue.svg)](README.md)
 ![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)
