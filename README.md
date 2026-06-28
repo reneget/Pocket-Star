@@ -1,93 +1,88 @@
-# My Pretty Star ⭐
+# Pocket Star
 
-**My Pretty Star** — site-to-site VPN orchestrator. Превращает старый компьютер в личный сервер без белого IP.
+> Turn your old computer into a personal server without a public IP. Your home, reachable from anywhere.
 
-## Проблема
+Pocket Star solves the problem when you have an old PC you want to use as a server (file storage, local AI inference, dev environment), but your ISP doesn't give you a public IP. Renting a VPS with the same specs as your old PC would cost a fortune.
 
-У вас есть старый ПК, который вы хотите использовать как сервер (файловое хранилище, нейросети, и т.д.), но провайдер не даёт белый IP. Аренда VPS с мощностями вашего ПК стоит дорого.
-
-## Решение
-
-1. **Снимаете самый дешёвый VPS** (от $3/мес) — он будет хабом с белым IP
-2. **Ваш сервер** (старый ПК) подключается к хаб через AmneziaWG
-3. **Ваш рабочий ноутбук** подключается к тому же хабу
-4. Всё — вы в одной виртуальной локальной сети. Сервер доступен как `10.0.0.2`
+Instead, you rent the **cheapest VPS** you can find (~$3/mo) — it acts as a hub with a public IP. Your server and your laptop connect to it via AmneziaWG, forming a virtual local network. Just like that, your server is accessible from anywhere.
 
 ```
-VPS (Хаб)        Старый ПК (Сервер)    Ноутбук (Клиент)
-10.0.0.1 ─────── 10.0.0.2             10.0.0.3
-    │                  │                    │
-    └── AmneziaWG ─────┴────────────────────┘
+VPS (Hub)         Old PC (Server)     Laptop (Client)
+10.0.0.1 ──────── 10.0.0.2            10.0.0.3
+    │                   │                   │
+    └── AmneziaWG ──────┴───────────────────┘
+    Docker Compose      Docker Compose       Native WG GUI
+                                             or pstar CLI
 ```
 
-## Быстрый старт
+## Quick Start
 
-### 1. На VPS (хаб)
+### 1. On VPS (hub)
 
 ```bash
-# Установка
-curl -sSL https://github.com/anomalyco/my-pretty-star/raw/main/scripts/quick-start.sh | bash
+curl -sSL https://github.com/anomalyco/pocket-star/raw/main/scripts/quick-start.sh | bash
 
-# Инициализация хаба с мастер-паролем (+ Docker)
-mps hub init --docker --pass
-# → Создаст: hub.conf, docker-compose.yml, клиентские конфиги
-# → Введи мастер-пароль (он защищает конфиги узлов)
+pstar hub init --docker --pass
+# → Creates: hub.conf, docker-compose.yml, encrypted client configs
+# → Set a master password (protects node configs)
 
-# Запуск
-docker compose -f mps-data/docker-compose.yml up -d
+docker compose -f pstar-data/docker-compose.yml up -d
 ```
 
-### 2. На старом ПК (сервер)
+### 2. On old PC (server)
 
 ```bash
-# Получить конфиг с хаба
-mps node join --hub <IP_ВАШЕГО_VPS>:51820 --docker --name server
-# → Введи мастер-пароль (тот же, что на хабе)
+pstar node join --hub <YOUR_VPS_IP>:51820 --docker --name server
+# → Enter the master password you set on the hub
 
-# Запуск
-docker compose -f mps-data/docker-compose.yml up -d
+docker compose -f pstar-data/docker-compose.yml up -d
 ```
 
-**Или без Docker** — скопируй `mps-data/clients/server.conf` с хаба и импортируй в WireGuard/AmneziaWG GUI.
+**No Docker?** Copy `pstar-data/clients/server.conf` from the hub and import it into WireGuard / AmneziaWG GUI.
 
-### 3. На ноутбуке (клиент)
+### 3. On laptop (client)
 
 ```bash
-mps node join --hub <IP_ВАШЕГО_VPS>:51820 --name work-laptop
-# Введи мастер-пароль
-# → Подключено!
+pstar node join --hub <YOUR_VPS_IP>:51820 --name work-laptop
+# Enter master password → connected.
 ```
 
-**Или через GUI:** скопируй `work-laptop.conf` → импорт в WireGuard/Amnezia → Connect.
+**Or via GUI:** copy `work-laptop.conf` → import into WireGuard/Amnezia → hit Connect.
 
-### 4. Проверка
+### 4. Verify
 
 ```bash
-ping 10.0.0.2               # Пингуем сервер
-ssh user@10.0.0.2           # SSH на сервер
-scp file user@10.0.0.2:~/  # Копируем файл
+ping 10.0.0.2               # Ping the server
+ssh user@10.0.0.2           # SSH into it
+scp file user@10.0.0.2:~/  # Copy files directly
 ```
 
-## Команды
+## Commands
 
-| Команда | Описание |
-|---------|----------|
-| `mps hub init --docker --pass` | Инициализация хаба на VPS |
-| `mps hub status` | Список подключённых узлов |
-| `mps node join --hub X` | Подключение узла (автоматически) |
-| `mps node status` | Статус VPN-соединения |
-| `mps module list` | Список модулей |
-| `mps decrypt <file>` | Расшифровать конфиг мастер-паролем |
-| `mps doctor` | Диагностика системы |
-| `mps version` | Версия |
+| Command | What it does |
+|---------|--------------|
+| `pstar hub init --docker --pass` | Initialize hub on VPS |
+| `pstar hub status` | List connected peers |
+| `pstar node join --hub X` | Connect this machine as a node |
+| `pstar node status` | VPN connection status |
+| `pstar module list` | List available modules |
+| `pstar decrypt <file>` | Decrypt a config with master password |
+| `pstar doctor` | Run system diagnostics |
+| `pstar version` | Print version |
 
-## Master-пароль
+## Master Password
 
-Конфиги узлов шифруются AES-256-GCM мастер-паролем. Это защищает ключи доступа при передаче через SCP или другие каналы.
+Node configs are encrypted with **AES-256-GCM** using a master password. This protects private keys during transfer over SCP or any other channel.
 
-## Архитектура
+```bash
+# On hub: configs are saved as *.conf.enc
+# On node: run `pstar decrypt server.conf.enc` and enter the password
+# Or just: `pstar node join` — it prompts for the password automatically
+```
 
-Проект построен на **модульной системе**. Любой новый функционал (SFTP, проброс портов, веб-панель) добавляется как отдельный модуль.
+## Module System
+
+Everything is built as pluggable modules. You can write your own by implementing one interface:
 
 ```go
 type Module interface {
@@ -101,19 +96,47 @@ type Module interface {
 }
 ```
 
-## Разработка
+### Planned modules
 
-```bash
-# Сборка
-go build -o mps ./cmd/mps
+- **core** — VPN + routing (MVP)
+- **sftp** — file sharing over SFTP
+- **port-fwd** — forward ports through the hub
+- **dashboard** — web UI
 
-# Тесты
-go test ./...
+## Architecture
 
-# Сборка для другой платформы
-GOOS=linux GOARCH=arm64 go build -o mps-arm64 ./cmd/mps
+```
+pocket-star/
+├── cmd/pstar/           # Entry point
+├── pkg/
+│   ├── cli/             # CLI commands (hub, node, module, doctor)
+│   ├── config/          # AES-256-GCM encryption
+│   ├── vpn/             # AmneziaWG key + config generation
+│   ├── module/          # Module interface + registry
+│   └── docker/          # docker-compose generation
+├── modules/
+│   └── core/            # Core module (VPN)
+├── images/
+│   ├── hub/Dockerfile
+│   └── node/Dockerfile
+└── scripts/
+    ├── quick-start.sh   # curl-to-bash installer
+    └── bootstrap.sh     # Fully automated setup
 ```
 
-## Лицензия
+## Development
+
+```bash
+# Build
+go build -o pstar ./cmd/pstar
+
+# Test
+go test ./...
+
+# Cross-compile
+GOOS=linux GOARCH=arm64 go build -o pstar-arm64 ./cmd/pstar
+```
+
+## License
 
 MIT

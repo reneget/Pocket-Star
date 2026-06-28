@@ -2,10 +2,10 @@ FROM alpine:3.20
 
 RUN apk add --no-cache wireguard-tools iptables iproute2 bash
 
-COPY mps-hub /usr/local/bin/mps
+COPY pstar-hub /usr/local/bin/pstar
 
 VOLUME ["/data"]
 EXPOSE 51820/udp
 
-ENTRYPOINT ["mps"]
+ENTRYPOINT ["pstar"]
 CMD ["hub", "status"]

@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# bootstrap.sh — Full automated setup for My Pretty Star
-# Detects role (hub/node) and runs the full setup.
+# bootstrap.sh — Full automated setup for Pocket Star
 
-MPS_DATA="${MPS_DATA:-./mps-data}"
+PSTAR_DATA="${PSTAR_DATA:-./pstar-data}"
 
 info()  { echo -e "\033[1;34m[*]\033[0m $*"; }
 ok()    { echo -e "\033[1;32m[+]\033[0m $*"; }
@@ -21,20 +20,20 @@ check_prereqs() {
     return "$missing"
 }
 
-install_mps() {
-    if command -v mps &>/dev/null; then
-        ok "mps already installed"
+install_pstar() {
+    if command -v pstar &>/dev/null; then
+        ok "pstar already installed"
         return
     fi
-    info "Installing mps..."
-    bash <(curl -sSL https://github.com/anomalyco/my-pretty-star/raw/main/scripts/quick-start.sh)
-    ok "mps installed"
+    info "Installing pstar..."
+    bash <(curl -sSL https://github.com/anomalyco/pocket-star/raw/main/scripts/quick-start.sh)
+    ok "pstar installed"
 }
 
 setup_hub() {
     info "Setting up as HUB..."
-    mps hub init --docker --pass --data-dir "$MPS_DATA"
-    cd "$MPS_DATA" && docker compose up -d
+    pstar hub init --docker --pass --data-dir "$PSTAR_DATA"
+    cd "$PSTAR_DATA" && docker compose up -d
     ok "Hub is running!"
     info "Your public IP: $(curl -s ifconfig.me)"
 }
@@ -46,20 +45,20 @@ setup_node() {
         exit 1
     fi
     info "Connecting to hub at $hub_addr..."
-    mps node join --hub "$hub_addr" --docker --data-dir "$MPS_DATA"
-    cd "$MPS_DATA" && docker compose up -d
+    pstar node join --hub "$hub_addr" --docker --data-dir "$PSTAR_DATA"
+    cd "$PSTAR_DATA" && docker compose up -d
     ok "Node connected!"
 }
 
 case "${1:-}" in
     hub)
         check_prereqs
-        install_mps
+        install_pstar
         setup_hub
         ;;
     node)
         check_prereqs
-        install_mps
+        install_pstar
         setup_node "${2:-}"
         ;;
     *)

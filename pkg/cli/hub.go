@@ -25,7 +25,7 @@ var hubInitCmd = &cobra.Command{
 		dataDir, _ := cmd.Flags().GetString("data-dir")
 
 		if dataDir == "" {
-			dataDir = "./mps-data"
+			dataDir = "./pstar-data"
 		}
 		if err := os.MkdirAll(dataDir, 0755); err != nil {
 			return fmt.Errorf("create data dir: %w", err)
@@ -109,7 +109,7 @@ func init() {
 	hubCmd.AddCommand(hubStatusCmd)
 	hubInitCmd.Flags().Bool("docker", false, "Generate docker-compose.yml")
 	hubInitCmd.Flags().Bool("pass", false, "Protect node configs with master password")
-	hubInitCmd.Flags().String("data-dir", "./mps-data", "Data directory for configs")
+	hubInitCmd.Flags().String("data-dir", "./pstar-data", "Data directory for configs")
 }
 
 func readPassword(prompt string) (string, error) {

@@ -31,7 +31,7 @@ var nodeJoinCmd = &cobra.Command{
 			nodeName = "node"
 		}
 		if dataDir == "" {
-			dataDir = "./mps-data"
+			dataDir = "./pstar-data"
 		}
 		if err := os.MkdirAll(dataDir, 0755); err != nil {
 			return fmt.Errorf("create data dir: %w", err)
@@ -49,11 +49,11 @@ var nodeJoinCmd = &cobra.Command{
 		fmt.Printf("✓ Node config: %s\n", cfgPath)
 
 		if masterPass != "" {
-			importCmd := fmt.Sprintf("scp user@%s:./mps-data/clients/%s.conf.enc . && mps decrypt %s.conf.enc",
+			importCmd := fmt.Sprintf("scp user@%s:./pstar-data/clients/%s.conf.enc . && pstar decrypt %s.conf.enc",
 				hubAddr, nodeName, nodeName)
 			fmt.Printf("📌 Import from hub: %s\n", importCmd)
 		} else {
-			fmt.Printf("📌 Import from hub: scp user@%s:./mps-data/clients/%s.conf ./\n", hubAddr, nodeName)
+			fmt.Printf("📌 Import from hub: scp user@%s:./pstar-data/clients/%s.conf ./\n", hubAddr, nodeName)
 		}
 
 		if useDocker {
@@ -84,5 +84,5 @@ func init() {
 	nodeJoinCmd.Flags().String("hub", "", "Hub address (e.g. 1.2.3.4:51820)")
 	nodeJoinCmd.Flags().String("name", "", "Node name")
 	nodeJoinCmd.Flags().Bool("docker", false, "Generate docker-compose.yml")
-	nodeJoinCmd.Flags().String("data-dir", "./mps-data", "Data directory")
+	nodeJoinCmd.Flags().String("data-dir", "./pstar-data", "Data directory")
 }
