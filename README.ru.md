@@ -89,18 +89,19 @@ graph LR
         CLI[CLI Команды]
         VPN[VPN Движок<br/>AmneziaWG]
         CRYPT[Крипто<br/>AES-256-GCM]
-        MOD[Система Модулей]
+        MOD[Система Модулей<br/>+ Manager]
         DOCK[Docker<br/>Compose]
+        PULSE[Pulse<br/>Client]
     end
     
     subgraph "Модули"
         CORE[Core Module]
+        TUI[TUI Module<br/>Bubbletea]
+        MON[Monitoring<br/>Checker + Alerts]
         SFTP[SFTP Module<br/>Планируется]
         FWD[Port Forward<br/>Планируется]
-        TUI[TUI Module<br/>Планируется]
         MEDIA[Media Storage<br/>Планируется]
         CLOUD[Cloud Sync<br/>Планируется]
-        MON[Monitoring<br/>Планируется]
     end
     
     subgraph "Дистрибуция"
@@ -115,12 +116,12 @@ graph LR
     PSTAR --> MOD
     PSTAR --> DOCK
     MOD --> CORE
-    MOD --> SFTP
-    MOD --> FWD
     MOD --> TUI
-    MOD --> MEDIA
-    MOD --> CLOUD
     MOD --> MON
+    MOD -.-> SFTP
+    MOD -.-> FWD
+    MOD -.-> MEDIA
+    MOD -.-> CLOUD
     DOCK --> HUB_IMG
     DOCK --> NODE_IMG
     CLI --> SCRIPTS
@@ -130,13 +131,14 @@ graph LR
     style VPN fill:#ff9ff3,color:#fff
     style CRYPT fill:#feca57,color:#000
     style MOD fill:#45b7d1,color:#fff
+    style PULSE fill:#96ceb4,color:#fff
     style CORE fill:#ff6b6b,color:#fff
-    style SFTP fill:#ff6b6b,color:#fff
-    style FWD fill:#ff6b6b,color:#fff
-    style TUI fill:#ff6b6b,color:#fff
-    style MEDIA fill:#ff6b6b,color:#fff
-    style CLOUD fill:#ff6b6b,color:#fff
-    style MON fill:#ff6b6b,color:#fff
+    style TUI fill:#ff9ff3,color:#fff
+    style MON fill:#4ecdc4,color:#fff
+    style SFTP fill:#a0a0a0,color:#fff,stroke-dasharray: 6 4,stroke-width:2px
+    style FWD fill:#a0a0a0,color:#fff,stroke-dasharray: 6 4,stroke-width:2px
+    style MEDIA fill:#a0a0a0,color:#fff,stroke-dasharray: 6 4,stroke-width:2px
+    style CLOUD fill:#a0a0a0,color:#fff,stroke-dasharray: 6 4,stroke-width:2px
 ```
 
 ### Последовательность подключения
@@ -277,19 +279,24 @@ type Module interface {
 }
 ```
 
-### Доступные
+### ✅ Готовые
 
-- **core** — VPN + маршрутизация (MVP) ✅
-- **tui** — терминальный интерфейс (вдохновлён opencode) ✅
+| Модуль | Описание | Статус |
+|--------|----------|--------|
+| **core** | VPN + маршрутизация | Готов |
+| **tui** | Терминальный интерфейс (bubbletea, мышь, вкладки, команды) | Готов |
+| **monitor** | Мониторинг системы/Docker/пиров, алерты, кольцевой буфер | Готов |
+| **pulse** | Pulse REST API клиент для удалённых метрик | Готов |
 
-### Планируемые
+### 🔲 Планируемые
 
-- **sftp** — файлообменник через SFTP
-- **port-fwd** — проброс портов через хаб
-- **dashboard** — веб-интерфейс
-- **media** — медиа-сервер (доступ с телефона/TV; на базе Jellyfin/Immich)
-- **cloud** — облачное хранилище и синхронизация (как OneDrive; на базе Nextcloud)
-- **monitoring** — мониторинг состояния системы (Pulse или Uptime Kuma)
+| Модуль | Описание |
+|--------|----------|
+| **sftp** | Файлообменник через SFTP |
+| **port-fwd** | Проброс портов через хаб |
+| **dashboard** | Веб-интерфейс |
+| **media** | Медиа-сервер (Jellyfin/Immich) |
+| **cloud** | Облачное хранилище и синхронизация (Nextcloud) |
 
 ---
 

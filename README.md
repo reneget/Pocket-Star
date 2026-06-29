@@ -89,18 +89,19 @@ graph LR
         CLI[CLI Commands]
         VPN[VPN Engine<br/>AmneziaWG]
         CRYPT[Crypto<br/>AES-256-GCM]
-        MOD[Module System]
+        MOD[Module System<br/>+ Manager]
         DOCK[Docker<br/>Compose]
+        PULSE[Pulse<br/>Client]
     end
     
     subgraph "Modules"
         CORE[Core Module]
-    SFTP[SFTP Module<br/>Planned]
-    FWD[Port Forward<br/>Planned]
-    TUI[TUI Module<br/>Planned]
-    MEDIA[Media Storage<br/>Planned]
-    CLOUD[Cloud Sync<br/>Planned]
-    MON[Monitoring<br/>Planned]
+        TUI[TUI Module<br/>Bubbletea]
+        MON[Monitoring<br/>Checker + Alerts]
+        SFTP[SFTP Module<br/>Planned]
+        FWD[Port Forward<br/>Planned]
+        MEDIA[Media Storage<br/>Planned]
+        CLOUD[Cloud Sync<br/>Planned]
     end
     
     subgraph "Distribution"
@@ -115,12 +116,12 @@ graph LR
     PSTAR --> MOD
     PSTAR --> DOCK
     MOD --> CORE
-    MOD --> SFTP
-    MOD --> FWD
     MOD --> TUI
-    MOD --> MEDIA
-    MOD --> CLOUD
     MOD --> MON
+    MOD -.-> SFTP
+    MOD -.-> FWD
+    MOD -.-> MEDIA
+    MOD -.-> CLOUD
     DOCK --> HUB_IMG
     DOCK --> NODE_IMG
     CLI --> SCRIPTS
@@ -130,13 +131,14 @@ graph LR
     style VPN fill:#ff9ff3,color:#fff
     style CRYPT fill:#feca57,color:#000
     style MOD fill:#45b7d1,color:#fff
+    style PULSE fill:#96ceb4,color:#fff
     style CORE fill:#ff6b6b,color:#fff
-    style SFTP fill:#ff6b6b,color:#fff
-    style FWD fill:#ff6b6b,color:#fff
-    style TUI fill:#ff6b6b,color:#fff
-    style MEDIA fill:#ff6b6b,color:#fff
-    style CLOUD fill:#ff6b6b,color:#fff
-    style MON fill:#ff6b6b,color:#fff
+    style TUI fill:#ff9ff3,color:#fff
+    style MON fill:#4ecdc4,color:#fff
+    style SFTP fill:#a0a0a0,color:#fff,stroke-dasharray: 6 4,stroke-width:2px
+    style FWD fill:#a0a0a0,color:#fff,stroke-dasharray: 6 4,stroke-width:2px
+    style MEDIA fill:#a0a0a0,color:#fff,stroke-dasharray: 6 4,stroke-width:2px
+    style CLOUD fill:#a0a0a0,color:#fff,stroke-dasharray: 6 4,stroke-width:2px
 ```
 
 ### Connection sequence
@@ -253,7 +255,7 @@ scp file user@10.0.0.2:~/  # Copy files directly
 | `pstar node join --hub X [--docker]` | Connect this machine as a node |
 | `pstar node status` | VPN connection status |
 | `pstar module list` | List available modules |
-| `pstar module enable <name>` | Enable a modile |
+| `pstar module enable <name>` | Enable a module |
 | `pstar module disable <name>` | Disable a module |
 | `pstar decrypt <file>` | Decrypt a config with master password |
 | `pstar doctor` | Run system diagnostics |
@@ -277,19 +279,24 @@ type Module interface {
 }
 ```
 
-### Available
+### ✅ Available
 
-- **core** — VPN + routing (MVP) ✅
-- **tui** — terminal user interface (inspired by opencode) ✅
+| Module | Description | Status |
+|--------|-------------|--------|
+| **core** | VPN + routing | Done |
+| **tui** | Terminal UI (bubbletea, mouse, tabs, commands) | Done |
+| **monitor** | System/Docker/peer health checks, alerts, ring buffer store | Done |
+| **pulse** | Pulse REST API client for remote metrics | Done |
 
-### Planned
+### 🔲 Planned
 
-- **sftp** — file sharing over SFTP
-- **port-fwd** — forward ports through the hub
-- **dashboard** — web UI
-- **media** — media storage server (accessible from phone, TV; built on Jellyfin/Immich)
-- **cloud** — cloud storage & file sync (like OneDrive; built on Nextcloud)
-- **monitoring** — system & service health monitoring (Pulse or Uptime Kuma)
+| Module | Description |
+|--------|-------------|
+| **sftp** | File sharing over SFTP |
+| **port-fwd** | Forward ports through the hub |
+| **dashboard** | Web UI |
+| **media** | Media storage server (Jellyfin/Immich) |
+| **cloud** | Cloud storage & file sync (Nextcloud) |
 
 ---
 
