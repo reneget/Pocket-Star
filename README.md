@@ -280,13 +280,13 @@ type Module interface {
 ### Available
 
 - **core** — VPN + routing (MVP) ✅
+- **tui** — terminal user interface (inspired by opencode) ✅
 
 ### Planned
 
 - **sftp** — file sharing over SFTP
 - **port-fwd** — forward ports through the hub
 - **dashboard** — web UI
-- **tui** — terminal user interface (inspired by opencode)
 - **media** — media storage server (accessible from phone, TV; built on Jellyfin/Immich)
 - **cloud** — cloud storage & file sync (like OneDrive; built on Nextcloud)
 - **monitoring** — system & service health monitoring (Pulse or Uptime Kuma)
