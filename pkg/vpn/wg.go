@@ -5,7 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 	"text/template"
 
 	"golang.org/x/crypto/curve25519"
@@ -166,4 +169,147 @@ func ShowStatus() error {
 	}
 	fmt.Print(string(out))
 	return nil
+}
+
+type HubConfig struct {
+	PrivateKey string
+	Address    string
+	Port       int
+	Peers      []hubPeer
+}
+
+func ParseHubConfig(data string) (*HubConfig, error) {
+	hc := &HubConfig{Port: 51820}
+	lines := strings.Split(data, "\n")
+	inInterface := false
+	var lastComment string
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		if strings.HasPrefix(line, "#") {
+			lastComment = strings.TrimPrefix(line, "# ")
+			continue
+		}
+		if line == "[Interface]" {
+			inInterface = true
+			continue
+		}
+		if line == "[Peer]" {
+			inInterface = false
+			hc.Peers = append(hc.Peers, hubPeer{Name: lastComment})
+			lastComment = ""
+			continue
+		}
+		if inInterface {
+			if strings.HasPrefix(line, "PrivateKey") {
+				hc.PrivateKey = extractValue(line)
+			} else if strings.HasPrefix(line, "Address") {
+				hc.Address = extractValue(line)
+			} else if strings.HasPrefix(line, "ListenPort") {
+				portStr := extractValue(line)
+				if p, err := strconv.Atoi(portStr); err == nil {
+					hc.Port = p
+				}
+			}
+		}
+		if len(hc.Peers) > 0 {
+			idx := len(hc.Peers) - 1
+			if strings.HasPrefix(line, "PublicKey") {
+				hc.Peers[idx].Public = extractValue(line)
+			} else if strings.HasPrefix(line, "AllowedIPs") {
+				val := extractValue(line)
+				hc.Peers[idx].IP = strings.Split(val, "/")[0]
+			}
+		}
+	}
+	return hc, nil
+}
+
+func extractValue(line string) string {
+	parts := strings.SplitN(line, "=", 2)
+	if len(parts) < 2 {
+		return ""
+	}
+	return strings.TrimSpace(parts[1])
+}
+
+func AddPeerToHubConfig(hubConfigPath, peerName string) (nodeCfg string, peerIP string, err error) {
+	data, err := os.ReadFile(hubConfigPath)
+	if err != nil {
+		return "", "", fmt.Errorf("read hub config: %w", err)
+	}
+
+	hc, err := ParseHubConfig(string(data))
+	if err != nil {
+		return "", "", fmt.Errorf("parse hub config: %w", err)
+	}
+
+	nextIP := 2
+	for _, p := range hc.Peers {
+		parts := strings.Split(p.IP, ".")
+		if len(parts) == 4 {
+			if n, err := strconv.Atoi(parts[3]); err == nil && n >= nextIP {
+				nextIP = n + 1
+			}
+		}
+	}
+
+	peerIP = fmt.Sprintf("10.0.0.%d", nextIP)
+
+	peerKeys, err := GenerateKeyPair()
+	if err != nil {
+		return "", "", fmt.Errorf("generate peer keys: %w", err)
+	}
+
+	hc.Peers = append(hc.Peers, hubPeer{
+		Name:   peerName,
+		Public: peerKeys.Public,
+		IP:     peerIP,
+	})
+
+	hd := hubData{
+		HubPrivate: hc.PrivateKey,
+		Address:    hc.Address,
+		Port:       hc.Port,
+		Peers:      hc.Peers,
+	}
+
+	var hubBuf bytes.Buffer
+	tmpl := template.Must(template.New("hub").Parse(hubTemplate))
+	if err := tmpl.Execute(&hubBuf, hd); err != nil {
+		return "", "", fmt.Errorf("render updated hub config: %w", err)
+	}
+
+	if err := os.WriteFile(hubConfigPath, hubBuf.Bytes(), 0600); err != nil {
+		return "", "", fmt.Errorf("write hub config: %w", err)
+	}
+
+	nodeCfg = fmt.Sprintf(`[Interface]
+PrivateKey = %s
+Address = %s/24
+
+[Peer]
+PublicKey = %s
+Endpoint = CHANGE_TO_HUB_IP:%d
+AllowedIPs = 10.0.0.0/24
+PersistentKeepalive = 25
+`, peerKeys.Private, peerIP, hc.PrivateKey, hc.Port)
+
+	return nodeCfg, peerIP, nil
+}
+
+func GenerateNodeConfigFull(peerName, hubEndpoint, hubPublicKey, nodePrivateKey, nodeIP string) string {
+	return fmt.Sprintf(`[Interface]
+PrivateKey = %s
+Address = %s/24
+
+[Peer]
+PublicKey = %s
+Endpoint = %s
+AllowedIPs = 10.0.0.0/24
+PersistentKeepalive = 25
+`, nodePrivateKey, nodeIP, hubPublicKey, hubEndpoint)
 }

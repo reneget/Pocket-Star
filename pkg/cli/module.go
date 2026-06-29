@@ -16,14 +16,10 @@ var moduleListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available modules",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		registry := module.GetRegistry()
-		if len(registry) == 0 {
-			fmt.Println("No modules registered.")
-			return nil
-		}
-		for _, m := range registry {
-			fmt.Printf("  %s\n", m.Name())
-		}
+		ctx := &module.Context{DataDir: "./pstar-data"}
+		mgr := module.NewManager(ctx)
+		mgr.InitAll()
+		fmt.Print(module.ModuleListString(mgr.List()))
 		return nil
 	},
 }

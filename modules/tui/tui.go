@@ -13,16 +13,19 @@ type TUIModule struct {
 	status module.Status
 	model  model
 	prog   *tea.Program
+	doneCh chan struct{}
+	mgr    *module.Manager
 }
 
 func (m *TUIModule) Name() string             { return "tui" }
 func (m *TUIModule) Priority() int             { return 10 }
-func (m *TUIModule) Dependencies() []string    { return []string{"core"} }
+func (m *TUIModule) Dependencies() []string    { return nil }
 func (m *TUIModule) Status() module.Status    { return m.status }
+func (m *TUIModule) SetModuleManager(mgr *module.Manager) { m.mgr = mgr }
 
 func (m *TUIModule) Init(ctx *module.Context) error {
 	m.ctx = ctx
-	m.model = initialModel(ctx)
+	m.doneCh = make(chan struct{})
 	m.status = module.StatusInactive
 	return nil
 }
@@ -31,6 +34,9 @@ func (m *TUIModule) Start() error {
 	if m.status == module.StatusActive {
 		return nil
 	}
+
+	// model создаётся здесь, после того как mgr уже установлен
+	m.model = initialModel(m.ctx, m.mgr)
 
 	m.prog = tea.NewProgram(
 		m.model,
@@ -42,6 +48,7 @@ func (m *TUIModule) Start() error {
 		if _, err := m.prog.Run(); err != nil {
 			log.Default.Push(fmt.Sprintf("tui exited: %v", err))
 		}
+		close(m.doneCh)
 	}()
 
 	m.status = module.StatusActive
@@ -58,26 +65,8 @@ func (m *TUIModule) Stop() error {
 	return nil
 }
 
-func Run(ctx *module.Context) error {
-	m := &TUIModule{}
-	if err := m.Init(ctx); err != nil {
-		return fmt.Errorf("tui init: %w", err)
-	}
-	if err := m.Start(); err != nil {
-		return fmt.Errorf("tui start: %w", err)
-	}
-
-	prog := tea.NewProgram(
-		m.model,
-		tea.WithAltScreen(),
-		tea.WithMouseCellMotion(),
-	)
-
-	if _, err := prog.Run(); err != nil {
-		return fmt.Errorf("tui: %w", err)
-	}
-
-	return nil
+func (m *TUIModule) Wait() {
+	<-m.doneCh
 }
 
 func init() {

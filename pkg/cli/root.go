@@ -6,11 +6,11 @@ import (
 
 	"github.com/anomalyco/my-pretty-star/pkg/icon"
 	"github.com/anomalyco/my-pretty-star/pkg/module"
-	"github.com/anomalyco/my-pretty-star/modules/tui"
 	"github.com/spf13/cobra"
 )
 
 var cliMode bool
+var monEnabled bool
 
 var rootCmd = &cobra.Command{
 	Use:   "pstar",
@@ -23,10 +23,39 @@ Documentation: https://github.com/reneget/Pocket-Star`,
 		if cliMode {
 			return cmd.Help()
 		}
-		return tui.Run(&module.Context{
+
+		ctx := &module.Context{
 			DataDir: "./pstar-data",
 			Network: "10.0.0.0/24",
-		})
+		}
+
+		mgr := module.NewManager(ctx)
+		if err := mgr.InitAll(); err != nil {
+			return fmt.Errorf("init modules: %w", err)
+		}
+
+		if mod := mgr.Get("tui"); mod != nil {
+			if tw, ok := mod.(interface{ SetModuleManager(*module.Manager) }); ok {
+				tw.SetModuleManager(mgr)
+			}
+		}
+
+		if monEnabled {
+			if err := mgr.Enable("monitor"); err != nil {
+				return fmt.Errorf("enable monitor: %w", err)
+			}
+		}
+
+		if err := mgr.StartAll(); err != nil {
+			return fmt.Errorf("start modules: %w", err)
+		}
+
+		if tuiMod := mgr.Get("tui"); tuiMod != nil {
+			if tw, ok := tuiMod.(interface{ Wait() }); ok {
+				tw.Wait()
+			}
+		}
+		return nil
 	},
 }
 
@@ -39,6 +68,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&cliMode, "cli", false, "Force CLI mode instead of TUI")
+	rootCmd.PersistentFlags().BoolVar(&monEnabled, "monitor", false, "Enable monitoring module at startup")
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(doctorCmd)
 	rootCmd.AddCommand(hubCmd)

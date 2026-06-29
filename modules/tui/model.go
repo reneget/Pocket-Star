@@ -31,14 +31,14 @@ type StatusInfo struct {
 }
 
 type HealthData struct {
-	CPU     float64
-	RAM     float64
-	RAMUsed string
+	CPU      float64
+	RAM      float64
+	RAMUsed  string
 	RAMTotal string
-	Disk    float64
+	Disk     float64
 	DiskUsed string
 	DiskTotal string
-	PubIP   string
+	PubIP    string
 }
 
 type model struct {
@@ -47,6 +47,7 @@ type model struct {
 	err      error
 	ctx      *module.Context
 	quitting bool
+	mgr      *module.Manager
 
 	status  StatusInfo
 	peers   []PeerInfo
@@ -66,13 +67,14 @@ type model struct {
 	showHelp bool
 }
 
-func initialModel(ctx *module.Context) model {
+func initialModel(ctx *module.Context, mgr *module.Manager) model {
 	vp := viewport.New(0, 0)
 	vp.Style = lipgloss.NewStyle().PaddingLeft(1)
 
 	return model{
 		tab:     0,
 		ctx:     ctx,
+		mgr:     mgr,
 		logBuf:  log.Default,
 		logView: vp,
 		status: StatusInfo{
@@ -251,8 +253,60 @@ func (m *model) executeCommand() {
 				m.tab = 2
 			}
 		}
+	case "module":
+		m.execModuleCmd(parts[1:])
 	default:
 		log.Default.Push(fmt.Sprintf("unknown command: /%s", cmd))
+	}
+}
+
+func (m *model) execModuleCmd(args []string) {
+	if len(args) == 0 {
+		if m.mgr == nil {
+			log.Default.Push("module manager not available")
+			return
+		}
+		log.Default.Push("Modules:\n" + module.ModuleListString(m.mgr.List()))
+		return
+	}
+
+	switch args[0] {
+	case "list":
+		if m.mgr == nil {
+			log.Default.Push("module manager not available")
+			return
+		}
+		log.Default.Push("Modules:\n" + module.ModuleListString(m.mgr.List()))
+	case "enable":
+		if len(args) < 2 {
+			log.Default.Push("usage: /module enable <name>")
+			return
+		}
+		if m.mgr == nil {
+			log.Default.Push("module manager not available")
+			return
+		}
+		if err := m.mgr.Enable(args[1]); err != nil {
+			log.Default.Push(fmt.Sprintf("enable %s: %v", args[1], err))
+		} else {
+			log.Default.Push(fmt.Sprintf("✓ module %s enabled", args[1]))
+		}
+	case "disable":
+		if len(args) < 2 {
+			log.Default.Push("usage: /module disable <name>")
+			return
+		}
+		if m.mgr == nil {
+			log.Default.Push("module manager not available")
+			return
+		}
+		if err := m.mgr.Disable(args[1]); err != nil {
+			log.Default.Push(fmt.Sprintf("disable %s: %v", args[1], err))
+		} else {
+			log.Default.Push(fmt.Sprintf("✓ module %s disabled", args[1]))
+		}
+	default:
+		log.Default.Push(fmt.Sprintf("unknown module subcommand: %s", args[0]))
 	}
 }
 
@@ -309,7 +363,7 @@ func (m model) headerView() string {
 	topLine := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		title,
-		lipgloss.NewStyle().Width(m.width-50).Render(""),
+		lipgloss.NewStyle().Width(m.width - 50).Render(""),
 		right,
 	)
 

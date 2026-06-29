@@ -102,6 +102,96 @@ var hubInitCmd = &cobra.Command{
 	},
 }
 
+var hubAddPeerCmd = &cobra.Command{
+	Use:   "add-peer",
+	Short: "Add a new peer to the hub",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name, _ := cmd.Flags().GetString("name")
+		dataDir, _ := cmd.Flags().GetString("data-dir")
+		usePass, _ := cmd.Flags().GetBool("pass")
+
+		if name == "" {
+			return fmt.Errorf("--name is required")
+		}
+		if dataDir == "" {
+			dataDir = "./pstar-data"
+		}
+
+		hubPath := filepath.Join(dataDir, "hub.conf")
+		if _, err := os.Stat(hubPath); os.IsNotExist(err) {
+			return fmt.Errorf("hub not initialized (no hub.conf in %s)", dataDir)
+		}
+
+		nodeCfg, peerIP, err := vpn.AddPeerToHubConfig(hubPath, name)
+		if err != nil {
+			return fmt.Errorf("add peer: %w", err)
+		}
+
+		clientsDir := filepath.Join(dataDir, "clients")
+		if err := os.MkdirAll(clientsDir, 0755); err != nil {
+			return fmt.Errorf("create clients dir: %w", err)
+		}
+
+		var masterPass string
+		ext := ".conf"
+		cfgData := []byte(nodeCfg)
+
+		if usePass {
+			masterPass, err = readPassword("Enter master password: ")
+			if err != nil {
+				return err
+			}
+			encData, err := config.Encrypt(cfgData, masterPass)
+			if err != nil {
+				return fmt.Errorf("encrypt config: %w", err)
+			}
+			cfgData = encData
+			ext = ".conf.enc"
+		}
+
+		path := filepath.Join(clientsDir, name+ext)
+		if err := os.WriteFile(path, cfgData, 0600); err != nil {
+			return fmt.Errorf("write config: %w", err)
+		}
+
+		fmt.Printf("✓ Peer %s added (IP: %s)\n", name, peerIP)
+		fmt.Printf("✓ Config: %s\n", path)
+		return nil
+	},
+}
+
+var hubExportCmd = &cobra.Command{
+	Use:   "export",
+	Short: "Export a peer config",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name, _ := cmd.Flags().GetString("name")
+		dataDir, _ := cmd.Flags().GetString("data-dir")
+
+		if name == "" {
+			return fmt.Errorf("--name is required")
+		}
+		if dataDir == "" {
+			dataDir = "./pstar-data"
+		}
+
+		paths := []string{
+			filepath.Join(dataDir, "clients", name+".conf"),
+			filepath.Join(dataDir, "clients", name+".conf.enc"),
+		}
+
+		for _, path := range paths {
+			data, err := os.ReadFile(path)
+			if err != nil {
+				continue
+			}
+			fmt.Print(string(data))
+			return nil
+		}
+
+		return fmt.Errorf("config for %s not found in clients/", name)
+	},
+}
+
 var hubStatusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show hub status and connected peers",
@@ -112,11 +202,21 @@ var hubStatusCmd = &cobra.Command{
 
 func init() {
 	hubCmd.AddCommand(hubInitCmd)
+	hubCmd.AddCommand(hubAddPeerCmd)
+	hubCmd.AddCommand(hubExportCmd)
 	hubCmd.AddCommand(hubStatusCmd)
+
 	hubInitCmd.Flags().Bool("docker", false, "Generate docker-compose.yml")
 	hubInitCmd.Flags().Bool("pass", false, "Protect node configs with master password")
-	hubInitCmd.Flags().Bool("monitor", false, "Include monitoring (Uptime Kuma) in docker-compose")
+	hubInitCmd.Flags().Bool("monitor", false, "Include Pulse monitoring in docker-compose")
 	hubInitCmd.Flags().String("data-dir", "./pstar-data", "Data directory for configs")
+
+	hubAddPeerCmd.Flags().String("name", "", "Peer name")
+	hubAddPeerCmd.Flags().String("data-dir", "./pstar-data", "Data directory")
+	hubAddPeerCmd.Flags().Bool("pass", false, "Encrypt with master password")
+
+	hubExportCmd.Flags().String("name", "", "Peer name")
+	hubExportCmd.Flags().String("data-dir", "./pstar-data", "Data directory")
 }
 
 func readPassword(prompt string) (string, error) {
