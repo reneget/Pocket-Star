@@ -45,6 +45,7 @@ func init() {
 	rootCmd.AddCommand(nodeCmd)
 	rootCmd.AddCommand(moduleCmd)
 	rootCmd.AddCommand(decryptCmd)
+	rootCmd.AddCommand(monitorCmd)
 }
 
 var versionCmd = &cobra.Command{

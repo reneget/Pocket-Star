@@ -3,9 +3,11 @@ package tui
 import (
 	"fmt"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/anomalyco/my-pretty-star/modules/monitor"
 	"github.com/anomalyco/my-pretty-star/pkg/log"
 	"github.com/anomalyco/my-pretty-star/pkg/module"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -28,15 +30,29 @@ type StatusInfo struct {
 	Uptime    string
 }
 
+type HealthData struct {
+	CPU     float64
+	RAM     float64
+	RAMUsed string
+	RAMTotal string
+	Disk    float64
+	DiskUsed string
+	DiskTotal string
+	PubIP   string
+}
+
 type model struct {
-	ready   bool
-	tab     int
-	err     error
-	ctx     *module.Context
+	ready    bool
+	tab      int
+	err      error
+	ctx      *module.Context
 	quitting bool
 
 	status  StatusInfo
 	peers   []PeerInfo
+
+	healthData  HealthData
+	containers  []monitor.ContainerInfo
 
 	logView viewport.Model
 	logBuf  *log.RingBuffer
@@ -95,6 +111,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(
 			tickCmd(),
 			func() tea.Msg { return m.refreshStatus() },
+			m.refreshHealth(),
+			m.refreshContainers(),
 		)
 
 	case statusMsg:
@@ -103,6 +121,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case peersMsg:
 		m.peers = []PeerInfo(msg)
+		return m, nil
+
+	case healthMsg:
+		m.healthData = HealthData(msg)
+		return m, nil
+
+	case containersMsg:
+		m.containers = []monitor.ContainerInfo(msg)
 		return m, nil
 
 	case errMsg:
@@ -330,8 +356,64 @@ func (m model) refreshStatus() tea.Msg {
 	if len(peers) > 0 {
 		m.logBuf.Push(fmt.Sprintf("status: %d peer(s) connected", len(peers)))
 	}
-
 	return peersMsg(peers)
+}
+
+func (m model) refreshHealth() tea.Cmd {
+	return func() tea.Msg {
+		return healthMsg(m.fetchSystemHealth())
+	}
+}
+
+func (m model) refreshContainers() tea.Cmd {
+	return func() tea.Msg {
+		cts, _ := monitor.ListContainersExternal()
+		return containersMsg(cts)
+	}
+}
+
+func (m model) fetchSystemHealth() HealthData {
+	h := HealthData{}
+
+	out, err := exec.Command("sh", "-c", `top -bn1 2>/dev/null | grep 'Cpu(s)' | awk '{print $2}'`).Output()
+	if err == nil {
+		s := strings.TrimSpace(string(out))
+		h.CPU, _ = strconv.ParseFloat(s, 64)
+	}
+
+	out, err = exec.Command("sh", "-c", `free -m | awk '/Mem:/{printf "%.1f %sMB %sMB", $3/$2*100, $3, $2}'`).Output()
+	if err == nil {
+		parts := strings.Fields(string(out))
+		if len(parts) >= 3 {
+			h.RAM, _ = strconv.ParseFloat(parts[0], 64)
+			h.RAMUsed = parts[1]
+			h.RAMTotal = parts[2]
+		}
+	}
+
+	out, err = exec.Command("sh", "-c", "df -B1 /data 2>/dev/null || df -B1 /").Output()
+	if err == nil {
+		lines := strings.Split(string(out), "\n")
+		if len(lines) >= 2 {
+			fields := strings.Fields(lines[1])
+			if len(fields) >= 5 {
+				totalB, _ := strconv.ParseInt(fields[1], 10, 64)
+				usedB, _ := strconv.ParseInt(fields[2], 10, 64)
+				if totalB > 0 {
+					h.Disk = float64(usedB) / float64(totalB) * 100
+					h.DiskUsed = fmt.Sprintf("%.1fG", float64(usedB)/(1<<30))
+					h.DiskTotal = fmt.Sprintf("%.1fG", float64(totalB)/(1<<30))
+				}
+			}
+		}
+	}
+
+	out, err = exec.Command("curl", "-s", "https://ifconfig.me").Output()
+	if err == nil {
+		h.PubIP = strings.TrimSpace(string(out))
+	}
+
+	return h
 }
 
 func fetchPeers() []PeerInfo {
@@ -376,4 +458,6 @@ func formatBytes(s string) string {
 type tickMsg time.Time
 type statusMsg StatusInfo
 type peersMsg []PeerInfo
+type healthMsg HealthData
+type containersMsg []monitor.ContainerInfo
 type errMsg error

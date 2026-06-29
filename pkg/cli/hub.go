@@ -22,6 +22,7 @@ var hubInitCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		useDocker, _ := cmd.Flags().GetBool("docker")
 		usePass, _ := cmd.Flags().GetBool("pass")
+		useMonitor, _ := cmd.Flags().GetBool("monitor")
 		dataDir, _ := cmd.Flags().GetString("data-dir")
 
 		if dataDir == "" {
@@ -83,7 +84,12 @@ var hubInitCmd = &cobra.Command{
 		}
 
 		if useDocker {
-			compose := docker.GenerateHubCompose(masterPass != "")
+			var compose string
+			if useMonitor {
+				compose = docker.GenerateHubComposeWithMonitor(masterPass != "")
+			} else {
+				compose = docker.GenerateHubCompose(masterPass != "")
+			}
 			composePath := filepath.Join(dataDir, "docker-compose.yml")
 			if err := os.WriteFile(composePath, []byte(compose), 0644); err != nil {
 				return fmt.Errorf("write docker-compose: %w", err)
@@ -109,6 +115,7 @@ func init() {
 	hubCmd.AddCommand(hubStatusCmd)
 	hubInitCmd.Flags().Bool("docker", false, "Generate docker-compose.yml")
 	hubInitCmd.Flags().Bool("pass", false, "Protect node configs with master password")
+	hubInitCmd.Flags().Bool("monitor", false, "Include monitoring (Uptime Kuma) in docker-compose")
 	hubInitCmd.Flags().String("data-dir", "./pstar-data", "Data directory for configs")
 }
 

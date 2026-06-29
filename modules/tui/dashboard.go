@@ -37,7 +37,75 @@ func (m model) dashboardView() string {
 	b.WriteString(fmt.Sprintf("  %s\n", btns))
 
 	b.WriteString("\n")
-	b.WriteString(sectionStyle.Render("Peers Overview"))
+	b.WriteString(m.healthView())
+	b.WriteString("\n")
+	b.WriteString(m.containersView())
+	b.WriteString("\n")
+	b.WriteString(m.peersOverview())
+
+	return boxStyle.Width(m.width - 8).Render(b.String())
+}
+
+func (m model) healthView() string {
+	var b strings.Builder
+	b.WriteString(sectionStyle.Render("System"))
+	b.WriteString("\n\n")
+
+	barWidth := 20
+
+	cpuBar := progressBar(m.healthData.CPU, barWidth)
+	ramBar := progressBar(m.healthData.RAM, barWidth)
+	diskBar := progressBar(m.healthData.Disk, barWidth)
+
+	fmt.Fprintf(&b, "  %s %s %5.1f%%\n", labelStyle.Render("CPU:"), cpuBar, m.healthData.CPU)
+	fmt.Fprintf(&b, "  %s %s %5.1f%%  %s\n", labelStyle.Render("RAM:"), ramBar, m.healthData.RAM, m.healthData.RAMUsed)
+	fmt.Fprintf(&b, "  %s %s %5.1f%%  %s\n", labelStyle.Render("Disk:"), diskBar, m.healthData.Disk, m.healthData.DiskUsed)
+	if m.healthData.PubIP != "" {
+		fmt.Fprintf(&b, "  %s%s\n", labelStyle.Render("Pub IP:"), valueStyle.Render(m.healthData.PubIP))
+	}
+
+	return b.String()
+}
+
+func (m model) containersView() string {
+	var b strings.Builder
+	b.WriteString(sectionStyle.Render("Containers"))
+	b.WriteString("\n\n")
+
+	if len(m.containers) == 0 {
+		b.WriteString("  No containers found.\n")
+		return b.String()
+	}
+
+	for _, ct := range m.containers {
+		icon := "○"
+		if ct.Running {
+			icon = "●"
+		}
+		statusColor := disconnectedStyle
+		if ct.Running {
+			statusColor = connectedStyle
+		}
+
+		cpuBar := minibar(ct.CPUPercent, 10)
+		memBar := minibar(ct.MemPercent, 10)
+
+		fmt.Fprintf(&b, "  %s %s %s  cpu:%s ram:%s %s\n",
+			statusColor.Render(icon),
+			peerNameStyle.Width(18).Render(ct.Name),
+			valueStyle.Render(ct.Status),
+			cpuBar,
+			memBar,
+			statusColor.Render(ct.Status[:min(7, len(ct.Status))]),
+		)
+	}
+
+	return b.String()
+}
+
+func (m model) peersOverview() string {
+	var b strings.Builder
+	b.WriteString(sectionStyle.Render("Peers"))
 	b.WriteString("\n\n")
 
 	if len(m.peers) == 0 {
@@ -56,5 +124,62 @@ func (m model) dashboardView() string {
 		}
 	}
 
-	return boxStyle.Width(m.width - 8).Render(b.String())
+	return b.String()
+}
+
+func progressBar(pct float64, width int) string {
+	if pct < 0 {
+		pct = 0
+	}
+	if pct > 100 {
+		pct = 100
+	}
+	filled := int(pct * float64(width) / 100)
+	empty := width - filled
+
+	fillChar := "█"
+	emptyChar := "░"
+
+	fill := strings.Repeat(fillChar, filled)
+	emp := strings.Repeat(emptyChar, empty)
+
+	var color lipgloss.Color
+	switch {
+	case pct > 80:
+		color = lipgloss.Color("#e74c3c")
+	case pct > 50:
+		color = lipgloss.Color("#f1c40f")
+	default:
+		color = lipgloss.Color("#2ecc71")
+	}
+
+	return lipgloss.NewStyle().Foreground(color).Render(fill + emp)
+}
+
+func minibar(pct float64, width int) string {
+	if pct < 0 {
+		pct = 0
+	}
+	if pct > 100 {
+		pct = 100
+	}
+	filled := int(pct * float64(width) / 100)
+	if filled > width {
+		filled = width
+	}
+
+	fill := strings.Repeat("█", filled)
+	emp := strings.Repeat("░", width-filled)
+
+	var color lipgloss.Color
+	switch {
+	case pct > 80:
+		color = lipgloss.Color("#e74c3c")
+	case pct > 50:
+		color = lipgloss.Color("#f1c40f")
+	default:
+		color = lipgloss.Color("#2ecc71")
+	}
+
+	return lipgloss.NewStyle().Foreground(color).Render(fill + emp)
 }
